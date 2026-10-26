@@ -1,0 +1,26 @@
+// MUTANT: длина в байтах вместо символов (исходный баг)
+
+package brand
+
+import (
+	"fmt"
+	"strings"
+)
+
+func ValidateName(field, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return &ValidationError{Field: field, Msg: "Обязательное поле"}
+	}
+	if len(name) > MaxNameLen {
+		return &ValidationError{Field: field, Msg: fmt.Sprintf("Не длиннее %d символов", MaxNameLen)}
+	}
+	return nil
+}
+
+func (b Brand) Validate() error {
+	if err := ValidateName("nameKz", b.NameKz); err != nil {
+		return err
+	}
+	return ValidateName("nameRu", b.NameRu)
+}

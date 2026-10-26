@@ -1,0 +1,32 @@
+package store
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"gopher-incidents/internal/brand"
+)
+
+func TestLevel01_CreateOnFreshStore(t *testing.T) {
+	m := NewMemory()
+	created, err := m.Create(context.Background(), brand.Brand{NameKz: "Рахат", NameRu: "Рахат"})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	got, err := m.Get(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("Get(%d) после Create: %v", created.ID, err)
+	}
+	if got.NameRu != "Рахат" {
+		t.Errorf("Get вернул %+v", got)
+	}
+}
+
+func TestLevel01_GetMissingReturnsErrNotFound(t *testing.T) {
+	m := NewMemory()
+	_, err := m.Get(context.Background(), 999)
+	if !errors.Is(err, brand.ErrNotFound) {
+		t.Errorf("Get(999) err = %v, ждали brand.ErrNotFound", err)
+	}
+}

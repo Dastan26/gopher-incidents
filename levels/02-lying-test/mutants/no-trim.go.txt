@@ -1,0 +1,25 @@
+// MUTANT: название из одних пробелов считается заполненным
+
+package brand
+
+import (
+	"fmt"
+	"unicode/utf8"
+)
+
+func ValidateName(field, name string) error {
+	if name == "" {
+		return &ValidationError{Field: field, Msg: "Обязательное поле"}
+	}
+	if utf8.RuneCountInString(name) > MaxNameLen {
+		return &ValidationError{Field: field, Msg: fmt.Sprintf("Не длиннее %d символов", MaxNameLen)}
+	}
+	return nil
+}
+
+func (b Brand) Validate() error {
+	if err := ValidateName("nameKz", b.NameKz); err != nil {
+		return err
+	}
+	return ValidateName("nameRu", b.NameRu)
+}

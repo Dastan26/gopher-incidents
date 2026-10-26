@@ -1,0 +1,27 @@
+package httpapi
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestLevel01_GetMissingBrandIs404(t *testing.T) {
+	srv, _ := newTestServer(t)
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/brands/999", nil))
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("GET /brands/999: status = %d, ждали 404", rec.Code)
+	}
+	var doc struct {
+		Errors []struct {
+			Status string `json:"status"`
+		} `json:"errors"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&doc); err != nil || len(doc.Errors) != 1 || doc.Errors[0].Status != "404" {
+		t.Errorf("ждали JSON:API-ошибку со status \"404\", получили %+v (err %v)", doc, err)
+	}
+}

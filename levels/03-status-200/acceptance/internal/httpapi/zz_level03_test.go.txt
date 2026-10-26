@@ -1,0 +1,88 @@
+package httpapi
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"log"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"gopher-incidents/internal/store"
+)
+
+func level03Do(t *testing.T, srv http.Handler, method, path, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(body)))
+	return rec
+}
+
+func level03ExpectJSONAPI(t *testing.T, rec *httptest.ResponseRecorder, wantStatus int) {
+	t.Helper()
+	if rec.Code != wantStatus {
+		t.Errorf("status = %d, ждали %d", rec.Code, wantStatus)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != mediaType {
+		t.Errorf("Content-Type = %q, ждали %q", ct, mediaType)
+	}
+}
+
+func TestLevel03_CreateReturns201(t *testing.T) {
+	srv, _ := newTestServer(t)
+	rec := level03Do(t, srv, http.MethodPost, "/brands",
+		`{"data":{"type":"brands","attributes":{"nameKz":"Рахат","nameRu":"Рахат"}}}`)
+	level03ExpectJSONAPI(t, rec, http.StatusCreated)
+
+	var doc struct {
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&doc); err != nil || doc.Data.ID == "" {
+		t.Errorf("в ответе нет data.id созданного бренда (err %v)", err)
+	}
+}
+
+func TestLevel03_ValidationErrorIs422(t *testing.T) {
+	srv, _ := newTestServer(t)
+	rec := level03Do(t, srv, http.MethodPost, "/brands",
+		`{"data":{"type":"brands","attributes":{"nameKz":"","nameRu":"Тест"}}}`)
+	level03ExpectJSONAPI(t, rec, http.StatusUnprocessableEntity)
+
+	var doc errorDocument
+	if err := json.NewDecoder(rec.Body).Decode(&doc); err != nil || len(doc.Errors) == 0 || doc.Errors[0].Source == nil ||
+		doc.Errors[0].Source.Pointer != "/data/attributes/nameKz" {
+		t.Errorf("ждали ошибку с source.pointer /data/attributes/nameKz, получили %+v (err %v)", doc, err)
+	}
+}
+
+func TestLevel03_ReadEndpoints(t *testing.T) {
+	srv, _ := newTestServer(t)
+	level03ExpectJSONAPI(t, level03Do(t, srv, http.MethodGet, "/brands", ""), http.StatusOK)
+	level03ExpectJSONAPI(t, level03Do(t, srv, http.MethodGet, "/brands/999", ""), http.StatusNotFound)
+}
+
+func TestLevel03_NoSuperfluousWriteHeader(t *testing.T) {
+	var logs bytes.Buffer
+	repo := store.NewMemory()
+	srv := httptest.NewUnstartedServer(New(repo, slog.New(slog.NewTextHandler(io.Discard, nil)), ""))
+	srv.Config.ErrorLog = log.New(&logs, "", 0)
+	srv.Start()
+	defer srv.Close()
+
+	resp, err := http.Post(srv.URL+"/brands", mediaType,
+		strings.NewReader(`{"data":{"type":"brands","attributes":{"nameKz":"","nameRu":""}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
+
+	if strings.Contains(logs.String(), "superfluous") {
+		t.Errorf("сервер пишет в лог: %s", strings.TrimSpace(logs.String()))
+	}
+}

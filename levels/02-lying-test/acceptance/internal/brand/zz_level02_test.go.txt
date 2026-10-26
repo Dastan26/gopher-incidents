@@ -1,0 +1,40 @@
+package brand
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestLevel02_NameLengthInRunes(t *testing.T) {
+	tests := []struct {
+		name    string
+		in      string
+		wantErr bool
+	}{
+		{"казахское название из 60 букв", "Солтүстік Қазақстан облысының сүт өнімдері зауыты «Ақ бидай»", false},
+		{"60 символов кириллицей", strings.Repeat("ж", 60), false},
+		{"ровно 100 символов кириллицей", strings.Repeat("ә", 100), false},
+		{"ровно 100 символов латиницей", strings.Repeat("a", 100), false},
+		{"101 символ кириллицей", strings.Repeat("ж", 101), true},
+		{"101 символ латиницей", strings.Repeat("a", 101), true},
+		{"пробелы по краям не считаются", "  " + strings.Repeat("ж", 100) + "  ", false},
+		{"только пробелы", "    ", true},
+		{"пустое", "", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateName("nameKz", tt.in)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateName(%q...) err = %v, wantErr = %v", firstRunes(tt.in, 12), err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func firstRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) > n {
+		r = r[:n]
+	}
+	return string(r)
+}
