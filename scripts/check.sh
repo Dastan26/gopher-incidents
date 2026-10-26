@@ -28,12 +28,12 @@ fail() {
 step() {
   local name="$1"; shift
   local out
-  printf '  %-28s' "$name"
+  printf '  '; pad "$name" 28
   if out=$("$@" 2>&1); then
     printf '%s\n' "${GRN}ok${R}"
   else
     printf '%s\n\n' "${RED}FAIL${R}"
-    printf '%s\n' "$out" | sed 's/^/    /' | head -n 60
+    printf '%s\n' "$out" | grep -vE '^(ok|\?) ' | sed 's/^/    /' | head -n 40
     fail "$name не прошёл."
   fi
 }
@@ -68,7 +68,7 @@ if [ -d "$dir/mutants" ]; then
     name=$(basename "$m" .go.txt)
     desc=$(sed -n 's#^// MUTANT: ##p' "$m" | head -n 1)
     cp "$m" "$target"
-    printf '    %-26s' "$name"
+    printf '    '; pad "$name" 14
     if go test -count=1 "$pkg" >/dev/null 2>&1; then
       printf '%s\n' "${RED}выжил${R}  ${DIM}${desc}${R}"
       survived+=("$name")

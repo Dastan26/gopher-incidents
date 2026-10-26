@@ -14,11 +14,11 @@ for n in $(all_levels); do
   if [ -f "$STATE/done-$n" ]; then
     read -r minutes hints < "$STATE/done-$n"
     closed=$((closed + 1))
-    printf '  %s  %-3s %-52s %s\n' "${GRN}закрыт${R}" "$n" "$title" "${DIM}${minutes} мин, подсказок ${hints}${R}"
+    printf '  %s    %-3s ' "${GRN}закрыт${R}" "$n"; pad "$title" 62; printf '%s\n' "${DIM}${minutes} мин, подсказок ${hints}${R}"
   elif [ "$n" = "$cur" ]; then
     printf '  %s  %-3s %s\n' "${YEL}в работе${R}" "$n" "$title"
   else
-    printf '  %s  %-3s %s\n' "${DIM}открыт${R}" "$n" "$title"
+    printf '  %s    %-3s %s\n' "${DIM}открыт${R}" "$n" "$title"
   fi
 done
 printf '\n  Закрыто %s из %s.' "$closed" "$total"

@@ -1,6 +1,8 @@
 # Общие функции для скриптов игры. Подключается через source.
 # Пишем под bash 3.2: он стоит на macOS по умолчанию.
 
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE="$ROOT/.gopher"
 cd "$ROOT"
@@ -10,6 +12,15 @@ if [ -t 1 ]; then
 else
   B=; DIM=; RED=; GRN=; YEL=; CYN=; R=
 fi
+
+# pad "текст" 28 — дополняет пробелами по числу символов, а не байтов
+# (printf %-28s на кириллице считает байты и ломает колонки).
+pad() {
+  local s="$1" n
+  n=${#s}
+  printf '%s' "$s"
+  while [ "$n" -lt "$2" ]; do printf ' '; n=$((n + 1)); done
+}
 
 die() { printf '%s\n' "${RED}$*${R}" >&2; exit 1; }
 
