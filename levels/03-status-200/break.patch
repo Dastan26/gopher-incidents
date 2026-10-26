@@ -1,0 +1,19 @@
+diff --git a/internal/httpapi/jsonapi.go b/internal/httpapi/jsonapi.go
+index 989dd61..ff382f6 100644
+--- a/internal/httpapi/jsonapi.go
++++ b/internal/httpapi/jsonapi.go
+@@ -75,12 +75,11 @@ func toResource(b brand.Brand) resource {
+ 	}
+ }
+ 
+-// writeJSON пишет ответ. Порядок важен: заголовки, затем статус, затем тело.
++// writeJSON пишет ответ: тело, тип содержимого и статус.
+ func writeJSON(w http.ResponseWriter, status int, v any) {
++	_ = json.NewEncoder(w).Encode(v)
+ 	w.Header().Set("Content-Type", mediaType)
+ 	w.WriteHeader(status)
+-	// Статус уже ушёл клиенту, поменять его при ошибке кодирования нельзя.
+-	_ = json.NewEncoder(w).Encode(v)
+ }
+ 
+ func writeError(w http.ResponseWriter, status int, detail, pointer string) {

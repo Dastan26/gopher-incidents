@@ -1,0 +1,39 @@
+diff --git a/internal/brand/brand_test.go b/internal/brand/brand_test.go
+index 6a40c51..52826df 100644
+--- a/internal/brand/brand_test.go
++++ b/internal/brand/brand_test.go
+@@ -12,12 +12,9 @@ func TestValidateName(t *testing.T) {
+ 		wantErr bool
+ 	}{
+ 		{"пустое", "", true},
+-		{"только пробелы", "   ", true},
+ 		{"латиница", "Nike", false},
+ 		{"кириллица", "Рахат", false},
+-		{"ровно 100 символов кириллицей", strings.Repeat("ж", 100), false},
+-		{"101 символ кириллицей", strings.Repeat("ж", 101), true},
+-		{"101 символ латиницей", strings.Repeat("a", 101), true},
++		{"слишком длинное", strings.Repeat("a", 150), true},
+ 	}
+ 	for _, tt := range tests {
+ 		t.Run(tt.name, func(t *testing.T) {
+diff --git a/internal/brand/validate.go b/internal/brand/validate.go
+index 8d0be37..9cf7cbd 100644
+--- a/internal/brand/validate.go
++++ b/internal/brand/validate.go
+@@ -3,7 +3,6 @@ package brand
+ import (
+ 	"fmt"
+ 	"strings"
+-	"unicode/utf8"
+ )
+ 
+ // ValidateName проверяет одно название: обязательное, пробелы по краям
+@@ -13,7 +12,7 @@ func ValidateName(field, name string) error {
+ 	if name == "" {
+ 		return &ValidationError{Field: field, Msg: "Обязательное поле"}
+ 	}
+-	if utf8.RuneCountInString(name) > MaxNameLen {
++	if len(name) > MaxNameLen {
+ 		return &ValidationError{Field: field, Msg: fmt.Sprintf("Не длиннее %d символов", MaxNameLen)}
+ 	}
+ 	return nil

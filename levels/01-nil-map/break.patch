@@ -1,0 +1,26 @@
+diff --git a/internal/store/memory.go b/internal/store/memory.go
+index cff7d8a..20bf739 100644
+--- a/internal/store/memory.go
++++ b/internal/store/memory.go
+@@ -17,7 +17,7 @@ type Memory struct {
+ }
+ 
+ func NewMemory() *Memory {
+-	return &Memory{nextID: 1, items: make(map[int]brand.Brand)}
++	return &Memory{nextID: 1}
+ }
+ 
+ func (m *Memory) List(_ context.Context) ([]brand.Brand, error) {
+@@ -36,11 +36,7 @@ func (m *Memory) Get(_ context.Context, id int) (brand.Brand, error) {
+ 	m.mu.RLock()
+ 	defer m.mu.RUnlock()
+ 
+-	b, ok := m.items[id]
+-	if !ok {
+-		return brand.Brand{}, brand.ErrNotFound
+-	}
+-	return b, nil
++	return m.items[id], nil
+ }
+ 
+ func (m *Memory) Create(_ context.Context, b brand.Brand) (brand.Brand, error) {
